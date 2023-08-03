@@ -1,0 +1,112 @@
+---
+title: "IMDb Download"
+author: "maintained by Ivan Ramler"
+date: 'Last updated June 2023'
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r include=FALSE}
+library(shiny)
+library(DT)
+library(dplyr)
+```
+
+
+```{r include=FALSE}
+# Read in data
+tv_shows <- arrow::read_parquet(file = "popular_tv_shows.parquet")
+
+tv_show_names <- readRDS("show_names.rds")
+#tv_show_years <- unique(tv_shows$startYear)
+```
+
+## Overview
+
+This tool allows you to download [IMDb](https://www.imdb.com/){target="_blank"} ratings data from popular TV series. More specifically, it provides a convenient way to extract and use the IMDb data provided at [https://datasets.imdbws.com/](https://datasets.imdbws.com/){target="_blank"}.
+
+The shows included in this tool consist of the 50 most popular shows (based on either rating or total number of votes) for each year from 1980 to present. Variables included in the data are:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+vars = readr::read_csv2("variable_description.csv2")
+```
+
+```{r, echo=FALSE}
+knitr::kable(vars)
+```
+
+
+
+
+## Downloading the IMDb data (as a CSV file).
+
+### 1. Choose up to three shows from the list below. You can type the name of the show(s) in the box to avoid manually searching through the entire list.
+
+
+```{r choose_shows, echo=FALSE}
+inputPanel(
+  selectizeInput(inputId = "show_name", label = "TV Shows:",
+              choices = NULL, selected = NULL, 
+              multiple = TRUE, 
+              options = list( maxItems = 3)
+              ),
+  actionButton("submit","Extract and Preview Data")
+)
+
+selectize_update <- updateSelectizeInput(session, 'show_name', choices = tv_show_names, server = TRUE)
+
+```
+
+
+### 2. Before downloading, preview the data using the Data Table.
+
+```{r echo=FALSE}
+
+tv_shows_chosen <- eventReactive(
+  input$submit,
+  {
+    tv_shows %>% 
+      filter(Show_Name %in% as.character(input$show_name)) %>%
+      group_by(Show_Name) %>%
+      arrange(Show_Name, episodeNumber_overall)
+  })
+
+
+renderDT(datatable(tv_shows_chosen()))
+
+```
+
+
+### 3. Click on the ``Download`` button below to save your data as a .csv (comma separate value) file. This will save the file to your computer.
+
+```{r, echo=FALSE}
+
+  # download data as a csv file
+downloadHandler(
+    
+    filename = function() { 
+      #show = data()
+      #Showtitle2 <- gsub(pattern = " ", replacement = "_", x = input$TVid)
+      #paste(
+      #  paste(input$submit)
+      #  , '.csv', sep='') 
+      "imdb_data.csv"
+    },
+    content = function(file) {
+      write.csv(tv_shows_chosen(), file, quote = FALSE, row.names = FALSE)
+    }
+  )
+
+
+
+
+```
+
+
+
+### 4. Move it to the appropriate locations and analyze in the software of choice (e.g., Minitab)
+

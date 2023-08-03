@@ -1,0 +1,9 @@
+Variable; Description
+Show_Name; The name of the show
+startYear; The year that the show started
+Episode_Name; The name of the episode
+seasonNumber; season number the episode belongs to
+episodeNumber_in_season; episode number within the season (restarts at 1 for each season)
+episodeNumber_overall; episode number within the entire series
+averageRating; weighted average of all the individual user ratings for the episode
+numVotes; number of votes the episode has received
